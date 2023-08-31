@@ -1,0 +1,86 @@
+<template>
+  <q-dialog v-model="dialogOpen" @hide="closeDialog">
+    <div class="q-pa-md bg-white rounded-borders">
+      <q-toolbar>
+        <page-logo :bg-color="'black'"/>
+
+        <q-toolbar-title><span class="text-weight-bold">Add</span> Board</q-toolbar-title>
+
+        <q-btn flat round dense icon="close" v-close-popup />
+      </q-toolbar>
+
+      <q-form
+          @submit="onSubmit"
+          @reset="onReset"
+          class="q-gutter-md"
+      >
+        <q-input
+            filled
+            v-model="title"
+            label="Title *"
+            lazy-rules
+            :rules="[ val => val && val.length > 0 || 'Please type something']"
+        />
+
+        <q-editor v-model="body" :placeholder="'Please type something'"/>
+
+        <div>
+          <q-btn label="Submit" type="submit" color="primary"/>
+          <q-btn label="Reset" type="reset" color="primary" flat class="q-ml-sm" />
+        </div>
+      </q-form>
+
+    </div>
+  </q-dialog>
+</template>
+<script>
+import fetchMixins from "@/mixins/fetch-mixins";
+import PageLogo from "@/components/Logo.vue";
+export default {
+  name: "BoardFormDialog",
+  mixins: [ fetchMixins ],
+  components: { PageLogo },
+  props: {
+    toolbar: {
+      type: Boolean,
+      default: () => false,
+    }
+  },
+  data: () => ({
+    dialogOpen: false,
+    title: '',
+    body: '',
+  }),
+  watch: {
+    toolbar() {
+      this.dialogOpen = this.toolbar;
+    }
+  },
+  methods: {
+    closeDialog() {
+      this.$emit("closeDialog", this.dialogOpen);
+    },
+    async getPostId() {
+      const postList = await this.$fetch('/posts');
+      return Math.max(...postList.map(post => post.id));
+    },
+    onSubmit() {
+      this.getPostId().then(postId => {
+        const param = {
+          "id": ++postId,
+          "title": this.title,
+          "body": this.body,
+          // TODO: user 정보 수정
+          "userId": 1,
+          "author": "Chrolla"
+        };
+        this.$fetch('/posts', param, 'POST');
+      });
+    },
+    onReset() {
+      this.title = null;
+      this.body = null;
+    }
+  }
+}
+</script>
