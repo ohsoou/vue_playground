@@ -1,3 +1,51 @@
+<script setup>
+import PageLogo from "@/components/Logo.vue";
+import {ref, watchEffect} from 'vue';
+import { $fetch } from "@/mixins/fetch-mixins";
+
+const props = defineProps({
+  toolbar: {
+    Type: Boolean,
+    default: false
+  }
+});
+const emit = defineEmits(['closeDialog']);
+
+
+const dialogOpen = ref(false);
+const title = ref('');
+const body = ref('');
+
+watchEffect(() => {
+  dialogOpen.value = props.toolbar;
+})
+const closeDialog = () => {
+  emit("closeDialog", dialogOpen);
+};
+const getPostId = async () => {
+  const postList = await $fetch('/posts');
+  return Math.max(...postList.map(post => post.id));
+};
+const onSubmit = () => {
+  getPostId().then(postId => {
+    const param = {
+      "id": ++postId,
+      "title": title.value,
+      "body": body.value,
+      // TODO: user 정보 수정
+      "userId": 1,
+      "author": "Chrolla"
+    };
+    $fetch('/posts', param, 'POST');
+  });
+};
+const onReset = () => {
+  title.value = null;
+  body.value = null;
+}
+
+</script>
+
 <template>
   <q-dialog v-model="dialogOpen" @hide="closeDialog">
     <div class="q-pa-md bg-white rounded-borders">
@@ -33,54 +81,3 @@
     </div>
   </q-dialog>
 </template>
-<script>
-import fetchMixins from "@/mixins/fetch-mixins";
-import PageLogo from "@/components/Logo.vue";
-export default {
-  name: "BoardFormDialog",
-  mixins: [ fetchMixins ],
-  components: { PageLogo },
-  props: {
-    toolbar: {
-      type: Boolean,
-      default: () => false,
-    }
-  },
-  data: () => ({
-    dialogOpen: false,
-    title: '',
-    body: '',
-  }),
-  watch: {
-    toolbar() {
-      this.dialogOpen = this.toolbar;
-    }
-  },
-  methods: {
-    closeDialog() {
-      this.$emit("closeDialog", this.dialogOpen);
-    },
-    async getPostId() {
-      const postList = await this.$fetch('/posts');
-      return Math.max(...postList.map(post => post.id));
-    },
-    onSubmit() {
-      this.getPostId().then(postId => {
-        const param = {
-          "id": ++postId,
-          "title": this.title,
-          "body": this.body,
-          // TODO: user 정보 수정
-          "userId": 1,
-          "author": "Chrolla"
-        };
-        this.$fetch('/posts', param, 'POST');
-      });
-    },
-    onReset() {
-      this.title = null;
-      this.body = null;
-    }
-  }
-}
-</script>
